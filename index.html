@@ -31,12 +31,14 @@
         <button onclick="setPosition('center', 'bottom')">Bottom</button>
         <button onclick="adjustPosition(0, -10)">Up</button>
         <button onclick="adjustPosition(0, 10)">Down</button>
+        <p>Or click to drag text</p>
     </div>
     <canvas id="canvas" width="512" height="512"></canvas>
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        let xPos = 'center';
+        // let xPos = 'center';
+        let xPos = canvas.width / 2; // center
         let yPos = canvas.height / 2;
 
         const commonFonts = [
@@ -72,22 +74,14 @@
             ctx.fillStyle = 'black';
             ctx.font = `${boldness} ${size}px ${font}`;
             ctx.textBaseline = 'middle';
-    
+            ctx.textAlign = 'center';
+
             // Calculate total height of all lines
             const totalHeight = lines.length * size;
     
             // Draw each line
             lines.forEach((line, index) => {
-                if (x === 'center') {
-                    ctx.textAlign = 'center';
-                    ctx.fillText(line, canvas.width / 2, y - (totalHeight / 2) + index * size);
-                } else if (x === 'left') {
-                    ctx.textAlign = 'start';
-                    ctx.fillText(line, 0, y - (totalHeight / 2) + index * size);
-                } else if (x === 'right') {
-                    ctx.textAlign = 'end';
-                    ctx.fillText(line, canvas.width, y - (totalHeight / 2) + index * size);
-                }
+                ctx.fillText(line, x, y - (totalHeight / 2) + index * size);
             });
         };
     
@@ -100,16 +94,24 @@
             drawText(text, size, boldness, font, xPos, yPos);
         }
     
+
         function setPosition(horizontal, vertical) {
-    const size = parseInt(document.getElementById('textSize').value);
+    const text = document.getElementById('textInput').value;
+    const size = document.getElementById('textSize').value;
+    const boldness = document.getElementById('textBoldness').value;
     
-    if (horizontal === 'center') xPos = 'center';
-    else if (horizontal === 'left') xPos = 'left';
-    else if (horizontal === 'right') xPos = 'right';
+    ctx.font = `${boldness} ${size}px Arial`; // This line is necessary to measure the text width properly.
+    
+    const textMetrics = ctx.measureText(text);
+    const textWidth = textMetrics.width;
+
+    if (horizontal === 'center') xPos = canvas.width / 2;
+    else if (horizontal === 'left') xPos = 0;
+    else if (horizontal === 'right') xPos = canvas.width - textWidth;
 
     if (vertical === 'middle') yPos = canvas.height / 2;
-    else if (vertical === 'top') yPos = size/2 + 10;  // Adjusted here
-    else if (vertical === 'bottom') yPos = canvas.height - (size / 2) - 10;
+    else if (vertical === 'top') yPos = size;  // assuming size is approximately the text height
+    else if (vertical === 'bottom') yPos = canvas.height - size;
 
     updateText();
 }
@@ -137,6 +139,39 @@
             downloadLink.download = 'canvas_image.png';         // Suggest a filename for downloaded image
             downloadLink.click();                               // Simulate a click to trigger the download
         }
+
+        let isDragging = false;
+        let lastMouseX = null;
+        let lastMouseY = null;
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                
+                if (typeof xPos === 'number') xPos += deltaX;
+                if (typeof yPos === 'number') yPos += deltaY;
+
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                
+                updateText();
+            }
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            isDragging = false; // Stop dragging when the mouse exits the canvas
+        });
     </script>
 </body>
 </html>
