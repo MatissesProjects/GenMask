@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Word Mask with Canvas</title>
+    <style>
+        #canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        Text: <textarea id="textInput" rows="4" cols="30" oninput="updateText()">YourTextHere</textarea><br>
+        Size: <input type="number" id="textSize" value="40" min="10" max="300" oninput="updateText()"><br>
+        Boldness: 
+        <select id="textBoldness" onchange="updateText()">
+            <option value="normal">Normal</option>
+            <option value="bold">Bold</option>
+            <option value="bolder">Bolder</option>
+        </select><br>
+        Font: 
+        <select id="fontSelection" onchange="updateText()">
+            <!-- Filled dynamically with JavaScript -->
+        </select>
+        <br>
+        <button onclick="setPosition('center', 'middle')">Center</button>
+        <button onclick="setPosition('left', 'middle')">Left</button>
+        <button onclick="setPosition('right', 'middle')">Right</button>
+        <button onclick="setPosition('center', 'top')">Top</button>
+        <button onclick="setPosition('center', 'bottom')">Bottom</button>
+        <button onclick="adjustPosition(0, -10)">Up</button>
+        <button onclick="adjustPosition(0, 10)">Down</button>
+    </div>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let xPos = 'center';
+        let yPos = canvas.height / 2;
+
+        const commonFonts = [
+            "Arial", "Verdana", "Helvetica", "Tahoma", "Trebuchet MS", "Times New Roman", 
+            "Georgia", "Garamond", "Courier New", "Brush Script MT"
+        ];
+
+        const fontSelection = document.getElementById('fontSelection');
+
+        // Try to load each font and add to dropdown if available
+        commonFonts.forEach(font => {
+            if (document.fonts.check(`12px ${font}`)) {  // Check if font is available on user's system
+                const option = document.createElement('option');
+                option.value = font;
+                option.innerText = font;
+                fontSelection.appendChild(option);
+            }
+        });
+
+        function adjustPosition(dx, dy) {
+            if (typeof yPos === 'number') yPos += dy;
+            updateText();
+        }
+        const drawText = (text, size, boldness, font, x, y) => {
+            // Clear the canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+            // Split text into lines
+            const lines = text.split('\n');
+            
+            // Set the text style
+            ctx.fillStyle = 'black';
+            ctx.font = `${boldness} ${size}px ${font}`;
+            ctx.textBaseline = 'middle';
+    
+            // Calculate total height of all lines
+            const totalHeight = lines.length * size;
+    
+            // Draw each line
+            lines.forEach((line, index) => {
+                if (x === 'center') {
+                    ctx.textAlign = 'center';
+                    ctx.fillText(line, canvas.width / 2, y - (totalHeight / 2) + index * size);
+                } else if (x === 'left') {
+                    ctx.textAlign = 'start';
+                    ctx.fillText(line, 0, y - (totalHeight / 2) + index * size);
+                } else if (x === 'right') {
+                    ctx.textAlign = 'end';
+                    ctx.fillText(line, canvas.width, y - (totalHeight / 2) + index * size);
+                }
+            });
+        };
+    
+        function updateText() {
+            const text = document.getElementById('textInput').value;
+            const size = document.getElementById('textSize').value;
+            const boldness = document.getElementById('textBoldness').value;
+            const font = fontSelection.value;
+
+            drawText(text, size, boldness, font, xPos, yPos);
+        }
+    
+        function setPosition(horizontal, vertical) {
+    const size = parseInt(document.getElementById('textSize').value);
+    
+    if (horizontal === 'center') xPos = 'center';
+    else if (horizontal === 'left') xPos = 'left';
+    else if (horizontal === 'right') xPos = 'right';
+
+    if (vertical === 'middle') yPos = canvas.height / 2;
+    else if (vertical === 'top') yPos = size/2 + 10;  // Adjusted here
+    else if (vertical === 'bottom') yPos = canvas.height - (size / 2) - 10;
+
+    updateText();
+}
+    
+        // Initialize the canvas with the default values
+        updateText();
+
+        // Drawing logic
+        let drawing = false;
+
+        // canvas.addEventListener('mousedown', () => {
+        //     drawing = true;
+        // });
+
+        // canvas.addEventListener('mouseup', () => {
+        //     drawing = false;
+        //     ctx.beginPath();
+        // });
+
+        // canvas.addEventListener('mousemove', draw);
+
+        function saveCanvasAsImage() {
+            const downloadLink = document.createElement('a');
+            downloadLink.href = canvas.toDataURL("image/png");  // Convert canvas content to a PNG data URL
+            downloadLink.download = 'canvas_image.png';         // Suggest a filename for downloaded image
+            downloadLink.click();                               // Simulate a click to trigger the download
+        }
+    </script>
+</body>
+</html>
